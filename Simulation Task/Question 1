@@ -1,1 +1,92 @@
+clc
+clear
+close all
 
+Nt=4;
+Nr=4;
+N=1e5;
+SNRdB=0:2:20;
+fc=28e9;
+delaySpread=50e-9;
+L=6;
+K=10;
+
+BER_LOS=zeros(length(SNRdB),1);
+BER_NLOS=zeros(length(SNRdB),1);
+
+bits=randi([0 1],N,1);
+tx=2*bits-1;
+
+H_los=sqrt(K/(K+1))*ones(Nr,Nt)+sqrt(1/(K+1))*((randn(Nr,Nt)+1i*randn(Nr,Nt))/sqrt(2));
+H_nlos=(randn(Nr,Nt)+1i*randn(Nr,Nt))/sqrt(2);
+
+for k=1:length(SNRdB)
+
+snr=10^(SNRdB(k)/10);
+
+noise=(randn(N,1)+1i*randn(N,1))/sqrt(2*snr);
+
+rx=H_los(1,1)*tx+noise;
+eq=rx/H_los(1,1);
+bitsHat=real(eq)>0;
+BER_LOS(k)=sum(bits~=bitsHat)/N;
+
+noise=(randn(N,1)+1i*randn(N,1))/sqrt(2*snr);
+
+rx=H_nlos(1,1)*tx+noise;
+eq=rx/H_nlos(1,1);
+bitsHat=real(eq)>0;
+BER_NLOS(k)=sum(bits~=bitsHat)/N;
+
+end
+
+delay=linspace(0,delaySpread,L);
+power=exp(-delay/delaySpread);
+
+fading=abs((randn(1000,1)+1i*randn(1000,1))/sqrt(2));
+
+figure
+semilogy(SNRdB,BER_LOS,'-ob','LineWidth',2)
+hold on
+semilogy(SNRdB,BER_NLOS,'-sr','LineWidth',2)
+grid on
+xlabel('SNR (dB)')
+ylabel('BER')
+title('BER vs SNR')
+legend('LOS','NLOS')
+
+figure
+stem(delay*1e9,power,'filled','LineWidth',2)
+grid on
+xlabel('Delay (ns)')
+ylabel('Normalized Power')
+title('Power Delay Profile')
+
+figure
+plot(1:Nr,abs(H_los(:,1)),'-ob','LineWidth',2)
+grid on
+xlabel('Receive Antenna Index')
+ylabel('Channel Gain')
+title('LOS Channel Gain')
+
+figure
+plot(1:Nr,abs(H_nlos(:,1)),'-sr','LineWidth',2)
+grid on
+xlabel('Receive Antenna Index')
+ylabel('Channel Gain')
+title('NLOS Channel Gain')
+
+figure
+plot(fading,'LineWidth',2)
+grid on
+xlabel('Sample Index')
+ylabel('Amplitude')
+title('Rayleigh Fading Envelope')
+freq=linspace(-100,100,1000);
+H=abs(sinc(freq/20));
+figure
+plot(freq,H,'LineWidth',2)
+grid on
+xlabel('Frequency (MHz)')
+ylabel('Magnitude')
+title('Channel Frequency Response')
