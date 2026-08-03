@@ -1,1 +1,67 @@
-
+clc
+clear
+close all
+users=10:10:100;
+reuse=[1 3 7];
+SNRdB=0:2:20;
+BW=20e6;
+BER=zeros(length(SNRdB),length(reuse));
+SINR=zeros(length(users),length(reuse));
+TH=zeros(length(users),length(reuse));
+for r=1:length(reuse)
+    I=1/reuse(r);
+    for i=1:length(SNRdB)
+        snr=10^(SNRdB(i)/10);
+        sinr=snr/(1+I);
+        BER(i,r)=0.5*erfc(sqrt(sinr));
+    end
+    for j=1:length(users)
+        snr=10^(15/10);
+        sinr=snr/(1+I+users(j)/100);
+        SINR(j,r)=10*log10(sinr);
+        TH(j,r)=BW*log2(1+sinr)/1e6;
+    end
+end
+figure
+plot(SNRdB,BER(:,1),'-o','LineWidth',2)
+hold on
+plot(SNRdB,BER(:,2),'-s','LineWidth',2)
+plot(SNRdB,BER(:,3),'-^','LineWidth',2)
+grid on
+xlabel('SNR (dB)')
+ylabel('BER')
+title('BER vs SNR')
+legend('Reuse 1','Reuse 3','Reuse 7')
+figure
+plot(users,SINR(:,1),'-o','LineWidth',2)
+hold on
+plot(users,SINR(:,2),'-s','LineWidth',2)
+plot(users,SINR(:,3),'-^','LineWidth',2)
+grid on
+xlabel('User Density')
+ylabel('SINR (dB)')
+title('SINR vs User Density')
+legend('Reuse 1','Reuse 3','Reuse 7')
+figure
+plot(users,TH(:,1),'-o','LineWidth',2)
+hold on
+plot(users,TH(:,2),'-s','LineWidth',2)
+plot(users,TH(:,3),'-^','LineWidth',2)
+grid on
+xlabel('User Density')
+ylabel('Throughput (Mbps)')
+title('Throughput vs User Density')
+legend('Reuse 1','Reuse 3','Reuse 7')
+interference=1./reuse;
+figure
+bar(reuse,interference)
+grid on
+xlabel('Frequency Reuse Factor')
+ylabel('Normalized Interference')
+title('Interference vs Frequency Reuse')
+figure
+plot(reuse,max(TH),'-o','LineWidth',2)
+grid on
+xlabel('Frequency Reuse Factor')
+ylabel('Maximum Throughput (Mbps)')
+title('Maximum Throughput vs Frequency Reuse')
